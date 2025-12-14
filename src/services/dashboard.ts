@@ -1,3 +1,4 @@
+import { api as baseApi } from '@/lib/api';
 import axios, { type AxiosRequestHeaders } from 'axios';
 
 const API_URL = (

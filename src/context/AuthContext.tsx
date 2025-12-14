@@ -180,15 +180,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 //     };
 //   }, [isHydrated, state.token, setAuth]);
 
-  const login = useCallback(
-    async (values: LoginFormValues) => {
-      const res = await LoginUser(values);
-      if (!res) return false;
-      setAuth(res.user ?? null, res.token ?? null);
-      return Boolean(res.user || res.token);
-    },
-    [setAuth]
-  );
+const login = useCallback(
+  async (values: LoginFormValues) => {
+    const res = await LoginUser(values);
+    if (!res) return false;
+    
+    console.log('🔐 Login response:', res);
+    console.log('🔑 Token received:', res.token);
+    
+    setAuth(res.user ?? null, res.token ?? null);
+    
+    // Verificar que se guardó
+    setTimeout(() => {
+      const saved = localStorage.getItem('auth:token');
+      console.log('💾 Token saved in localStorage:', saved?.substring(0, 20) + '...');
+    }, 100);
+    
+    return Boolean(res.user || res.token);
+  },
+  [setAuth]
+);
 
   const register = useCallback(
     async (values: RegisterFormValues) => {

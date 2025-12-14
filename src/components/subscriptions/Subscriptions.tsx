@@ -16,7 +16,7 @@ const { user } = useAuth();
       price: 0.10,
       currency: "USD",
       description: "Pay month-to-month",
-      features: "Unlimited pins, likes, saves, and comments"
+      features: "Unlimited pins, likes, comments"
     },
     {
       type: "annual" as const,
@@ -24,7 +24,7 @@ const { user } = useAuth();
       price: 0.30,
       currency: "USD",
       description: "Save 20% with yearly payment",
-      features: "Unlimited pins, likes, saves, and comments"
+      features: "Unlimited pins, likes, comments"
     }
   ];
 

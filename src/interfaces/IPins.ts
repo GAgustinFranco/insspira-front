@@ -1,3 +1,9 @@
+// src/interfaces/IPins.ts
+export interface IHashtag {
+  id: string;
+  tag: string;
+}
+
 export interface IPins {
   id: string;
   image?: string | null;
@@ -5,14 +11,21 @@ export interface IPins {
   views: number;
   user: string;
   likes?: number;
-  likesCount: number,
-  liked: boolean,
-  commentsCount: number,
+  likesCount: number;
+  liked: boolean;
+  commentsCount: number;
   comment?: number;
+  hashtag?: IHashtag[];
 }
 
 export interface IComment {
   id: string;
   text: string;
-  createAt: string;
+  createdAt: string;
+  user: {
+    id: string;
+    name: string;
+    username?: string | null;
+    avatar?: string | null;
+  };
 }

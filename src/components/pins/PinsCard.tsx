@@ -108,6 +108,18 @@ const PinsCard: React.FC<PinsCardProps> = ({ pin, likesState, setLikesState, onO
         </div>
 
         <span className="font-semibold">{pin.description ?? ""}</span>
+        {pin.hashtag && pin.hashtag.length > 0 && (
+        <div className="flex flex-wrap gap-1 mt-2">
+          {pin.hashtag.map((h) => (
+            <span
+              key={h.id}
+              className="bg-[#ffffff20] px-2 py-1 rounded-full text-xs text-white"
+              >
+              #{h.tag}
+      </span>
+    ))}
+  </div>
+)}
       </div>
     </div>
   );

@@ -3,5 +3,5 @@ export interface IUploadPin {
   image: string;
   description: string;
   categoryId: string;
-  hashtags: IHashtag[]; 
+  hashtags?: string[];  // ✅ Array de strings, NO objetos
 }

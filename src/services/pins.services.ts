@@ -1,16 +1,11 @@
 // src/services/pins.services.ts (o src/services/pins.ts)
+import { api } from "@/lib/api";
 import axios, { type AxiosRequestHeaders } from "axios";
 import type { IPins, IComment } from "@/interfaces/IPins";
 import type { IUploadPin } from "@/interfaces/IUploadPin";
 import type { ICategory } from "@/interfaces/ICategory";
 import { IHashtag } from "@/interfaces/IHashtag";
 import Cookies from 'js-cookie';
-
-const API_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  "http://localhost:3000"
-).replace(/\/+$/, "");
 
 const CLOUDINARY_CLOUD_NAME = process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME;
 const CLOUDINARY_API_KEY = process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY;
@@ -27,25 +22,6 @@ const getAuthToken = (): string | null => {
   
   return null;
 };
-
-export const api = axios.create({ baseURL: API_URL, withCredentials: true });
-// ✅ sin any: usa AxiosRequestHeaders
-api.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token =
-      localStorage.getItem("auth:token") ||
-      localStorage.getItem("token") ||
-      localStorage.getItem("access_token") ||
-      undefined;
-    if (token) {
-      const headers: AxiosRequestHeaders = (config.headers as AxiosRequestHeaders) ?? {};
-      headers.Authorization = `Bearer ${token}`;
-      config.headers = headers;
-     
-    }
-  }
-  return config;
-});
 
 type AxiosLikeError = {
   response?: { status?: number; statusText?: string; data?: unknown };
@@ -66,7 +42,7 @@ export interface UIPinModal {
   views: number;
   created: string;
   comments: IComment[];
-  hashtag: IHashtag;
+  hashtag: IHashtag[];
   liked?: boolean;
   user: string;
 }
@@ -81,7 +57,7 @@ interface PinByIdResponse {
   views: number;
   created: string;
   comments: IComment[];
-  hashtag: IHashtag;
+  hashtag: IHashtag[];
   user: string;
 }
 // ✅ sin any: estrecha a un tipo auxiliar
@@ -107,6 +83,7 @@ export const getAllPins = async (): Promise<IPins[]> => {
       commentsCount: pin.commentsCount,  
       views: pin.views,
       user: pin.user,
+      hashtag: pin.hashtag || [],
     }));
   } catch (error) {
     console.error("Error getting pins:", explainAxiosError(error));
@@ -202,15 +179,16 @@ type UploadPayload = Pick<IUploadPin, "description"> & {
 };
 
 // --- Crear Pin ---
-export const savePin = async (pin: IUploadPin | UploadPayload) => {
- 
-  const payload = {
-    image: readStringKey(pin, "image") ?? readStringKey(pin, "imageUrl"),
-    description: (pin as IUploadPin).description,
-    categoryId: readStringKey(pin, "categoryId"),
-  };
-
-  const { data } = await api.post("/pins", payload);
+export const savePin = async (payload: {
+  image: string;
+  description: string;
+  categoryId: string;
+  hashtags?: string[];
+}) => {
+  console.log('📤 Saving pin:', payload);
+  console.log('🔑 Token in localStorage:', localStorage.getItem('auth:token')?.substring(0, 20) + '...');
+  
+  const { data } = await api.post('/pins', payload);
   return data;
 };
 
