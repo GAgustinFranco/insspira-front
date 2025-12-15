@@ -73,15 +73,21 @@ function explainAxiosError(err: unknown) {
 
 export const getAllPins = async (): Promise<IPins[]> => {
   try {
+    const token = getAuthToken();
+    console.log('🔑 Token encontrado:', token ? 'SÍ' : 'NO');
+    
     const { data } = await api.get<IPins[]>("/pins");
+    console.log('📦 Respuesta del backend (primeros 2 pins):', data.slice(0, 2));
+    
+    // ✅ CRÍTICO: Mantener el campo 'liked' que viene del backend
     return data.map((pin: IPins) => ({
       id: pin.id,
       image: pin.image,
       description: pin.description,
-      likesCount: pin.likesCount,
-      liked: pin.liked,       
-      commentsCount: pin.commentsCount,  
-      views: pin.views,
+      likesCount: pin.likesCount ?? 0,
+      liked: pin.liked ?? false,  // ✅ Preservar el estado del backend
+      commentsCount: pin.commentsCount ?? 0,  
+      views: pin.views ?? 0,
       user: pin.user,
       hashtag: pin.hashtag || [],
     }));

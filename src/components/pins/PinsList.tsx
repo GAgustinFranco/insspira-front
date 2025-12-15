@@ -10,8 +10,6 @@ interface PinsListProps {
   searchResults: IPins[] | null;
 }
 
-
-
 export default function PinsList({ searchResults }: PinsListProps) {
   const [allPins, setAllPins] = useState<IPins[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -21,6 +19,7 @@ export default function PinsList({ searchResults }: PinsListProps) {
     Record<string, { liked: boolean; likesCount: number }>
   >({});
 
+  // ✅ Cargar pins solo cuando no hay resultados de búsqueda
   useEffect(() => {
     if (searchResults === null) {
       const fetchPins = async () => {
@@ -33,21 +32,26 @@ export default function PinsList({ searchResults }: PinsListProps) {
 
   const displayedPins = searchResults !== null ? searchResults : allPins;
 
+  // ✅ Inicializar estado de likes SOLO con los datos que ya vienen del backend
   useEffect(() => {
     if (displayedPins.length === 0) return;
   
     const initialState = displayedPins.reduce((acc, pin) => {
+      console.log(`🔍 Pin ${pin.id.substring(0, 8)}... - liked:`, pin.liked, 'likesCount:', pin.likesCount);
+      
+      // ✅ Usar los datos que YA vienen del backend (getAllPins)
       acc[pin.id] = {
-        liked: pin.liked ?? false,  // <- aquí usamos 'liked' del backend
-        likesCount: pin.likesCount
+        liked: pin.liked ?? false,
+        likesCount: pin.likesCount ?? 0
       };
       return acc;
     }, {} as Record<string, { liked: boolean; likesCount: number }>);
   
+    console.log('📊 Estado inicial de likes:', initialState);
     setLikesState(initialState);
   }, [displayedPins]);
-  
 
+  // ✅ Limpiar modal si el pin desaparece
   useEffect(() => {
     if (pinSelected && displayedPins.every(pin => pin.id !== pinSelected)) {
       setIsOpen(false);
@@ -60,9 +64,6 @@ export default function PinsList({ searchResults }: PinsListProps) {
     image: pin.image?.trim() ? pin.image : "/architecture.jpg",
   });
 
-
-   
-
   return (
     <div className="flex justify-center h-auto px-4 bg-gradient-to-r from-[#0E172B] to-[#1B273B]">
       <div className="grid sm:grid-cols-1 md:grid-cols-2 lg:grid-cols-3 md:gap-8 lg:gap-10">
@@ -74,11 +75,10 @@ export default function PinsList({ searchResults }: PinsListProps) {
             setLikesState={(newState) =>
               setLikesState(prev => ({ ...prev, [pin.id]: newState }))
             }
-          
             onOpenModal={() => {
               setPinSelected(pin.id);
               setIsOpen(true);
-              addView(pin.id)
+              addView(pin.id);
             }}
           />
         ))}
