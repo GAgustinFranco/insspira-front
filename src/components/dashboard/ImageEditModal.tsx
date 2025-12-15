@@ -1,4 +1,3 @@
-// src/components/dashboard/ImageEditModal.tsx
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,22 +6,30 @@ import { FiX, FiUpload } from 'react-icons/fi';
 export default function ImageEditModal({
   open,
   onClose,
-  onSave,        // <- ahora entrega File
+  onSave,
   currentUrl,
 }: {
   open: boolean;
   onClose: () => void;
-  onSave: (file: File) => void; // <- 👈 cambia a File
-  currentUrl: string;
+  onSave: (file: File) => void;
+  currentUrl: string | null; // ✅ Permitir null
 }) {
-  const [preview, setPreview] = useState<string>(currentUrl);
-  const [file, setFile] = useState<File | null>(null);  // <- guardamos el File
+  // ✅ FIX: Usar placeholder si currentUrl está vacío
+  const fallbackAvatar = 'https://ui-avatars.com/api/?name=User&size=160&background=6B46C1&color=fff';
+  
+  // ✅ CRÍTICO: Inicializar con valor válido inmediatamente
+  const initialPreview = currentUrl?.trim() || fallbackAvatar;
+  
+  const [preview, setPreview] = useState<string>(initialPreview);
+  const [file, setFile] = useState<File | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [dragging, setDragging] = useState(false);
 
   useEffect(() => {
     if (open) {
-      setPreview(currentUrl);
+      // ✅ FIX: Prevenir string vacío
+      const validUrl = currentUrl?.trim();
+      setPreview(validUrl || fallbackAvatar);
       setFile(null);
       setError(null);
       setDragging(false);
@@ -42,7 +49,7 @@ export default function ImageEditModal({
       return;
     }
     setError(null);
-    setFile(f); // <- guardamos el File real
+    setFile(f);
     const fr = new FileReader();
     fr.onload = () => {
       const dataUrl = String(fr.result || '');
@@ -116,12 +123,24 @@ export default function ImageEditModal({
           {/* Circular preview */}
           <div className="flex items-center justify-center">
             <div className="relative w-32 h-32 md:w-40 md:h-40">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={preview || currentUrl}
-                alt="Preview"
-                className="absolute inset-0 w-full h-full rounded-full object-cover ring-2 ring-white/20"
-              />
+              {/* ✅ CRÍTICO: Solo renderizar si preview es válido y no vacío */}
+              {preview && preview.length > 0 ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={preview}
+                  alt="Preview"
+                  className="absolute inset-0 w-full h-full rounded-full object-cover ring-2 ring-white/20"
+                  onError={(e) => {
+                    // Fallback si la imagen falla al cargar
+                    e.currentTarget.src = fallbackAvatar;
+                  }}
+                />
+              ) : (
+                // Placeholder si no hay imagen válida
+                <div className="absolute inset-0 w-full h-full rounded-full bg-white/10 ring-2 ring-white/20 flex items-center justify-center text-white/50">
+                  <FiUpload className="text-3xl" />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -136,10 +155,10 @@ export default function ImageEditModal({
           </button>
           <button
             onClick={() => {
-              if (file) onSave(file);   // <- enviamos el File al padre
+              if (file) onSave(file);
               onClose();
             }}
-            className="px-4 py-2 rounded-lg bg-white text-[var(--color-violeta)]"
+            className="px-4 py-2 rounded-lg bg-white text-[var(--color-violeta)] disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={!file}
           >
             Save

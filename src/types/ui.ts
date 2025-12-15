@@ -28,7 +28,7 @@ export type UIPayment = {
 export type Post = {
   id: string;
   title: string;
-  imageUrl: string;
+  imageUrl: string | null;
   stats: { likes: number; views: number };
   createdAt: string; // ISO
   tags: string[];
@@ -39,7 +39,7 @@ export type UserProfile = {
   name: string;
   username?: string | null;
   email: string;
-  avatar: string;
+  avatar: string | null;
   bio?: string | null;
   joinDate: string;    // ISO
   postsCount: number;

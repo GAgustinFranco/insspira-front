@@ -1,4 +1,3 @@
-//src/components/dashboard/ProfileHeader.tsx
 "use client";
 
 import { FiMail, FiCalendar, FiEdit2 } from "react-icons/fi";
@@ -38,8 +37,10 @@ export default function ProfileHeader({
   onOpenEditInfo: () => void;
 }) {
   const u = user;
-  const src =
-    typeof u.avatar === "string" && u.avatar.trim().length > 0
+  
+  // ✅ FIX: Asegurar que src nunca sea string vacío
+  const src = 
+    u.avatar && u.avatar.trim().length > 0
       ? u.avatar
       : placeholderAvatar(u.name, u.email);
 
@@ -95,7 +96,7 @@ export default function ProfileHeader({
           <div className="mt-4 grid grid-cols-2 md:grid-cols-3 gap-3 text-sm md:text-base">
             <div className="flex items-center gap-2 text-[var(--color-blanco)]">
               <FiMail />
-              <span>{u.email}</span>
+              <span className="truncate">{u.email}</span>
             </div>
             <div className="flex items-center gap-2 text-[var(--color-blanco)]">
               <FiCalendar />

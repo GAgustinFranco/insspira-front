@@ -159,7 +159,8 @@ export default function DashboardView() {
           name: backendUser?.name ?? name ?? email ?? '',
           username: backendUser?.username ?? null,
           email: backendUser?.email ?? email ?? '',
-          avatar: backendUser?.profilePicture ?? "",
+          // ✅ FIX: Convertir string vacío a null
+          avatar: backendUser?.profilePicture?.trim() || null,
           bio: backendUser?.biography ?? "",
           joinDate: toIsoStringSafe(backendUser?.createdAt) ?? "",
           postsCount: typeof backendUser?.pinsCount === 'number' ? backendUser.pinsCount : 0,
@@ -207,7 +208,7 @@ export default function DashboardView() {
           name: name ?? email ?? '',
           username: null,
           email: email ?? '',
-          avatar: "",
+          avatar: null, // ✅ FIX: null en lugar de ""
           bio: "",
           joinDate: new Date().toISOString(),
           postsCount: 0,
@@ -275,7 +276,7 @@ export default function DashboardView() {
       <ImageEditModal
         open={showAvatar}
         onClose={() => setShowAvatar(false)}
-        currentUrl={user.avatar}
+        currentUrl={user.avatar || null}
         onSave={handleSaveAvatar}
       />
 
