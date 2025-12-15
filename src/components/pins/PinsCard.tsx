@@ -50,10 +50,10 @@ const PinsCard: React.FC<PinsCardProps> = ({
     });
 
     try {
-      // ✅ Esperar respuesta del backend
+      //  Esperar respuesta del backend
       await addLike(pin.id);
     } catch (err) {
-      // ✅ Rollback en caso de error
+      //  Rollback en caso de error
       setLikesState(previousState);
       
       const error = err as AxiosError;
