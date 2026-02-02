@@ -25,6 +25,7 @@ export const API_BASE =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/+$/, "") ?? 
   process.env.NEXT_PUBLIC_BACKEND_URL?.replace(/\/+$/, "") ?? 
   "http://localhost:3000";
+
 /* ================= helpers ================= */
 
 interface JWTPayload {
@@ -101,7 +102,7 @@ function pickMessage(data: unknown, fallback: string): string {
 
 function pickToken(data: unknown): string | undefined {
   if (!isRecord(data)) return undefined;
-  const t = (data as Record<string, unknown>).accessToken ?? (data as Record<string, unknown>).token;
+  const t = (data as Record<string, unknown>).token ?? (data as Record<string, unknown>).accessToken;
   return typeof t === "string" ? t : undefined;
 }
 
@@ -136,8 +137,20 @@ export const RegisterUser = async (
     }
 
     const accessToken = pickToken(data);
+    
+    // 👇 GUARDAR TOKEN EN LOCALSTORAGE
+    if (accessToken && typeof window !== 'undefined') {
+      localStorage.setItem('auth:token', accessToken);
+      console.log('✅ Token saved to localStorage');
+    }
+
     const user: AuthUser | undefined =
       accessToken ? (await getUserFromToken(accessToken)) ?? undefined : undefined;
+
+    // 👇 GUARDAR USER EN LOCALSTORAGE
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem('auth:user', JSON.stringify(user));
+    }
 
     toast.success("User registered successfully!");
     return { token: accessToken, user };
@@ -158,8 +171,20 @@ export const LoginUser = async (
     }
 
     const accessToken = pickToken(data);
+    
+    // 👇 GUARDAR TOKEN EN LOCALSTORAGE
+    if (accessToken && typeof window !== 'undefined') {
+      localStorage.setItem('auth:token', accessToken);
+      console.log('✅ Token saved to localStorage');
+    }
+
     const user: AuthUser | undefined =
       accessToken ? (await getUserFromToken(accessToken)) ?? undefined : undefined;
+
+    // 👇 GUARDAR USER EN LOCALSTORAGE
+    if (user && typeof window !== 'undefined') {
+      localStorage.setItem('auth:user', JSON.stringify(user));
+    }
 
     toast.success("User logged successfully!");
     return { token: accessToken, user };
@@ -170,7 +195,7 @@ export const LoginUser = async (
 };
 
 // loginWithPassport
- export function loginWithPassport(): void {
+export function loginWithPassport(): void {
   window.location.href = `${API_BASE}/auth/google`; 
 }
 
@@ -189,7 +214,11 @@ export async function getMe(): Promise<AuthUser | null> {
   try {
     const res = await fetch(`${API_BASE}/auth/me`, {
       method: "GET",
-      credentials: "include", // 🔑 manda la cookie al backend
+      credentials: "include",
+      headers: {
+        // 👇 ENVIAR TOKEN EN HEADER
+        'Authorization': `Bearer ${typeof window !== 'undefined' ? localStorage.getItem('auth:token') : ''}`
+      }
     });
 
     if (!res.ok) return null;
@@ -216,8 +245,14 @@ export async function logoutGoogle(): Promise<boolean> {
   try {
     const res = await fetch(`${API_BASE}/auth/google/logout`, {
       method: "GET",
-      credentials: "include", // 🔑 manda la cookie al backend para borrarla
+      credentials: "include",
     });
+
+    // 👇 LIMPIAR LOCALSTORAGE AL LOGOUT
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('auth:token');
+      localStorage.removeItem('auth:user');
+    }
 
     return res.ok;
   } catch (err) {
@@ -225,4 +260,3 @@ export async function logoutGoogle(): Promise<boolean> {
     return false;
   }
 }
-
