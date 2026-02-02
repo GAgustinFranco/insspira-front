@@ -29,10 +29,9 @@ export default function FormLogin() {
     validationSchema: LoginValidationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        const ok = await login(values);
-        if (ok) {
-          const role = user?.role ?? getRoleFromStorage();
-          router.push(role === "admin" ? "dashboard/admin" : "/dashboard");
+        const loggedUser = await login(values);
+        if (loggedUser) {
+          router.push(loggedUser.role === "admin" ? "/dashboard/admin" : "/dashboard");
         }
       } finally {
         setSubmitting(false);

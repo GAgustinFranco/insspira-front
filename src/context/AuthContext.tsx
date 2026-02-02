@@ -29,7 +29,7 @@ export interface AuthContextValue extends AuthState {
   isAdmin: boolean;
   isHydrated: boolean;
   isChecking: boolean;
-  login: (values: LoginFormValues) => Promise<boolean>;
+  login: (values: LoginFormValues) => Promise<AuthUser | null>;
   register: (values: RegisterFormValues) => Promise<boolean>;
   logout: () => void;
   setAuth: (user: AuthUser | null, token: string | null) => void;
@@ -92,51 +92,46 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     writeStorage({ user, token });
   }, []);
 
-  // ✅ sincronización multi-tab con localStorage
-  useEffect(() => {
-    setIsHydrated(true);
+// Primer useEffect - solo el listener de storage multi-tab
+useEffect(() => {
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === USER_KEY || e.key === TOKEN_KEY) {
+      setState(readStorage());
+    }
+  };
+  window.addEventListener("storage", onStorage);
+  return () => window.removeEventListener("storage", onStorage);
+}, []);
 
-    const onStorage = (e: StorageEvent) => {
-      if (e.key === USER_KEY || e.key === TOKEN_KEY) {
-        setState(readStorage());
-      }
-    };
-
-    window.addEventListener("storage", onStorage);
-    return () => window.removeEventListener("storage", onStorage);
-  }, []);
-
-  // ✅ bootstrap: intentar sesión con cookie (Passport)
-  useEffect(() => {
+// Segundo useEffect - bootstrap, este es el que controla isHydrated
+useEffect(() => {
   let cancelled = false;
   setIsChecking(true);
 
   const fetchUser = async () => {
     try {
-      // llama siempre a getMe() para rehidratar sesión desde cookie
-      const me = await getMe(); // usa cookie de Passport
+      const me = await getMe();
       if (!cancelled && me) {
-        setAuth(me, state.token); // mantiene token local si existe
+        setAuth(me, state.token);
       }
     } catch (err) {
       console.error("Auth bootstrap error:", err);
     } finally {
-      if (!cancelled) setIsChecking(false);
-      if (!cancelled) setIsHydrated(true);
+      if (!cancelled) {
+        setIsChecking(false);
+        setIsHydrated(true); // ← solo aquí, cuando ya sabe si hay sesión o no
+      }
     }
   };
 
   fetchUser();
 
-  // también revisa query de Google login
   const params = new URLSearchParams(window.location.search);
   if (params.get("googleLogin") === "success") {
-    fetchUser(); // fuerza getMe() si viene de redirección Google
+    fetchUser();
   }
 
-  return () => {
-    cancelled = true;
-  };
+  return () => { cancelled = true; };
 }, [setAuth, state.token]);
 
 
@@ -181,22 +176,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 //   }, [isHydrated, state.token, setAuth]);
 
 const login = useCallback(
-  async (values: LoginFormValues) => {
+  async (values: LoginFormValues): Promise<AuthUser | null> => {
     const res = await LoginUser(values);
-    if (!res) return false;
-    
-    console.log('🔐 Login response:', res);
-    console.log('🔑 Token received:', res.token);
-    
+    if (!res) return null;
     setAuth(res.user ?? null, res.token ?? null);
-    
-    // Verificar que se guardó
-    setTimeout(() => {
-      const saved = localStorage.getItem('auth:token');
-      console.log('💾 Token saved in localStorage:', saved?.substring(0, 20) + '...');
-    }, 100);
-    
-    return Boolean(res.user || res.token);
+    return res.user ?? null;
   },
   [setAuth]
 );

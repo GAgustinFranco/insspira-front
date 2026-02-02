@@ -21,10 +21,9 @@ export default function RegisterComponent() {
     validationSchema: RegisterValidationSchema,
     onSubmit: async (values, { setSubmitting }) => {
       try {
-        // Opción alternativa (si quieres ir al login y no quedar logueado)
-        const ok = await RegisterUser(values);     // <-- llama al service directo
-        if (ok) router.push("/login");             // y NO uses register() del contexto
-
+        const result = await RegisterUser(values);
+        console.log("📝 RegisterUser result:", result); // ← agrega esto
+        if (result) router.push("/login");
       } catch (err) {
         console.error("❌ Registration error:", err);
       } finally {
