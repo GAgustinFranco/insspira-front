@@ -5,16 +5,16 @@
 // Node 18+ => fetch global. Si usas <18, instala undici y haz: global.fetch = (...)
 
 const API =
-  (process.env.NEXT_PUBLIC_API_BASE_URL ||
-    process.env.NEXT_PUBLIC_API_URL ||
+  (process.env.NEXT_PUBLIC_API_URL ||
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
     "http://localhost:3000").replace(/\/+$/, "");
 
 const ENDPOINTS = {
   register: "/auth/register",
   login: "/auth/login",
   users: "/users",
-  categoryCreate: "/category", // cambia a "/categories" si tu API es plural
-  pin: "/pins",                 // cambia a "/pins" si tu API es plural
+  categoryCreate: "/categories", 
+  pin: "/pins",                 
 };
 
 // ===== Usuario semilla =====

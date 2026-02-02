@@ -137,7 +137,7 @@ export const searchPins = async (query: string): Promise<IPins[]> => {
 
 export const getCategories = async (): Promise<ICategory[]> => {
   try {
-    const { data } = await api.get<ICategory[]>("/category");
+    const { data } = await api.get<ICategory[]>("/categories");
     return data;
   } catch (error) {
     console.error("Error fetching categories:", explainAxiosError(error));

@@ -27,7 +27,7 @@ import {
 type APIUser = BackendUser;
 type PlanLike = string | { type?: string; features?: string[] | string } | null | undefined;
 
-const API = (process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3000').replace(/\/+$/, '');
+const API = (process.env.NEXT_PUBLIC_API_URL || process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:3000').replace(/\/+$/, '');
 
 /* ===== Helpers de UI ===== */
 function toIsoStringSafe(v: string | Date | null | undefined): string | undefined {
