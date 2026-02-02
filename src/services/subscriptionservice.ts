@@ -1,7 +1,10 @@
 import axios from "axios";
 
-
 export type PlanType = "monthly" | "annual";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 
+                     process.env.NEXT_PUBLIC_BACKEND_URL || 
+                     'http://localhost:3000';
 
 export async function createSubscription(
   plan: PlanType,
@@ -10,7 +13,7 @@ export async function createSubscription(
 ): Promise<{ init_point: string }> {
   if (!email) throw new Error("Email del usuario requerido");
 
-  const endpoint = `https://api-latest-ejkf.onrender.com/subscriptions/${plan}`;
+  const endpoint = `${API_BASE_URL}/subscriptions/${plan}`;
 
   const res = await axios.post(endpoint, { email, userId });
 

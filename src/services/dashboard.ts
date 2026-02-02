@@ -2,8 +2,8 @@ import { api as baseApi } from '@/lib/api';
 import axios, { type AxiosRequestHeaders } from 'axios';
 
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
   process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
   'http://localhost:3000'
 ).replace(/\/+$/, '');
 

@@ -3,8 +3,8 @@ import type { AxiosRequestHeaders } from 'axios';
 import Cookies from 'js-cookie';
 
 const API_URL = (
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
+  process.env.NEXT_PUBLIC_API_URL ||           // 👈 Cambiado
+  process.env.NEXT_PUBLIC_BACKEND_URL ||       // 👈 Cambiado
   'http://localhost:3000'
 ).replace(/\/+$/, '');
 
