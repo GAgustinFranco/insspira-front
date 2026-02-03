@@ -1,7 +1,6 @@
 "use client";
 
 import { useFormik } from "formik";
-import { useRouter } from "next/navigation";
 import { LoginInitialValues, LoginValidationSchema } from "@/validators/LoginSchema";
 import { FcGoogle } from "react-icons/fc";
 import { FiArrowLeft } from "react-icons/fi";
@@ -9,20 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { loginWithPassport } from "@/services/authservice";
 
 export default function FormLogin() {
-  const router = useRouter();
-  const { login, isHydrated, user } = useAuth();
-
-  // fallback por si el re-render del contexto no llegó aún
-  const getRoleFromStorage = (): "admin" | "user" | undefined => {
-    try {
-      const raw = localStorage.getItem("auth:user");
-      if (!raw) return undefined;
-      const parsed = JSON.parse(raw) as { role?: "admin" | "user" };
-      return parsed.role;
-    } catch {
-      return undefined;
-    }
-  };
+  const { login, isHydrated } = useAuth();
 
   const formik = useFormik({
     initialValues: LoginInitialValues,
@@ -30,8 +16,11 @@ export default function FormLogin() {
     onSubmit: async (values, { setSubmitting }) => {
       try {
         const loggedUser = await login(values);
+        console.log("📝 Login result:", loggedUser);
         if (loggedUser) {
-          router.push(loggedUser.role === "admin" ? "/dashboard/admin" : "/dashboard");
+          const dest = loggedUser.role === "admin" ? "/dashboard/admin" : "/home";
+          console.log("🔄 Redirecting to:", dest);
+          window.location.href = dest; // 👈 Fuerza reload completo
         }
       } finally {
         setSubmitting(false);
@@ -39,7 +28,7 @@ export default function FormLogin() {
     },
   });
 
-  if (!isHydrated) return null; // evita parpadeo
+  if (!isHydrated) return null;
 
   const inputBase =
     "w-full h-12 px-4 rounded-xl bg-white/10 border border-white/15 text-white placeholder-white/60 outline-none focus:border-white/40 transition";
@@ -49,18 +38,16 @@ export default function FormLogin() {
   return (
     <main className="min-h-[calc(100dvh-0px)] w-full flex items-center justify-center px-4 py-10 bg-[linear-gradient(to_right,rgba(28,22,62,.9)_0%,rgba(116,53,150,.85)_40%,rgba(116,53,150,.85)_60%,rgba(28,22,62,.9)_100%)]">
       <section className="w-full max-w-md">
-        {/* Back button */}
         <div className="mb-3">
           <button
             type="button"
-            onClick={() => router.back()}
+            onClick={() => window.history.back()}
             className="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-white/20 text-white hover:border-white/40 text-sm"
           >
             <FiArrowLeft /> Back
           </button>
         </div>
 
-        {/* Card */}
         <div className="rounded-2xl bg-white/10 border border-white/15 backdrop-blur-md shadow-[0_20px_60px_rgba(0,0,0,.35)] p-6 sm:p-8">
           <header className="text-center mb-6">
             <h1 className="text-2xl sm:text-3xl font-semibold text-white">Log in</h1>
@@ -127,7 +114,7 @@ export default function FormLogin() {
         </div>
 
         <p className="mt-4 text-center text-sm text-white/80">
-          Don’t have an account?{" "}
+          Don't have an account?{" "}
           <a href="/register" className="underline underline-offset-4 decoration-white/40 hover:decoration-white">
             Sign up
           </a>
