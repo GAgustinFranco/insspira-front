@@ -85,7 +85,7 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>(() => readStorage());
   const [isHydrated, setIsHydrated] = useState(false);
-  const [isChecking, setIsChecking] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
 
   const setAuth = useCallback((user: AuthUser | null, token: string | null) => {
     setState({ user, token });
