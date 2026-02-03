@@ -17,8 +17,8 @@ import {
   getMe,
   logoutGoogle
 } from "@/services/authservice";
- import { API_BASE } from "@/services/authservice";
-// import getUserFromToken from "@/services/authservice";
+import { API_BASE } from "@/services/authservice";
+
 export interface AuthState {
   user: AuthUser | null;
   token: string | null;
@@ -38,25 +38,6 @@ export interface AuthContextValue extends AuthState {
 
 const USER_KEY = "auth:user";
 const TOKEN_KEY = "auth:token";
-
-// type JwtPayload = {
-//   sub?: string;
-//   email?: string;
-//   name?: string;
-//   isAdmin?: boolean;
-// };
-
-// function decodeJwt<T = Record<string, unknown>>(token: string): T | null {
-//   try {
-//     const [, payload] = token.split(".");
-//     if (!payload) return null;
-//     const json = atob(payload.replace(/-/g, "+").replace(/_/g, "/"));
-//     return JSON.parse(json) as T;
-//   } catch {
-//     return null;
-//   }
-// }
-
 
 function readStorage(): AuthState {
   if (typeof window === "undefined") return { user: null, token: null };
@@ -92,126 +73,96 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     writeStorage({ user, token });
   }, []);
 
-// Primer useEffect - solo el listener de storage multi-tab
-useEffect(() => {
-  const onStorage = (e: StorageEvent) => {
-    if (e.key === USER_KEY || e.key === TOKEN_KEY) {
-      setState(readStorage());
-    }
-  };
-  window.addEventListener("storage", onStorage);
-  return () => window.removeEventListener("storage", onStorage);
-}, []);
-
-// Segundo useEffect - bootstrap, este es el que controla isHydrated
-useEffect(() => {
-  let cancelled = false;
-  setIsChecking(true);
-
-  const fetchUser = async () => {
-    try {
-      const me = await getMe();
-      if (!cancelled && me) {
-        setAuth(me, state.token);
+  // Listener de storage multi-tab
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === USER_KEY || e.key === TOKEN_KEY) {
+        setState(readStorage());
       }
-    } catch (err) {
-      console.error("Auth bootstrap error:", err);
-    } finally {
-      if (!cancelled) {
-        setIsChecking(false);
-        setIsHydrated(true); // ← solo aquí, cuando ya sabe si hay sesión o no
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  // Bootstrap - se ejecuta UNA SOLA VEZ al montar
+  useEffect(() => {
+    let cancelled = false;
+
+    const bootstrap = async () => {
+      setIsChecking(true);
+
+      try {
+        // 1. Si ya tenemos user y token en localStorage, úsalos directamente
+        const stored = readStorage();
+        if (stored.user && stored.token) {
+          console.log("✅ Auth: Restored from localStorage");
+          if (!cancelled) {
+            setState(stored);
+            setIsChecking(false);
+            setIsHydrated(true);
+          }
+          return;
+        }
+
+        // 2. Si no hay localStorage, intenta con cookie (Google OAuth)
+        console.log("🔍 Auth: Trying getMe() for cookie-based auth...");
+        const me = await getMe();
+        if (!cancelled && me) {
+          console.log("✅ Auth: Got user from getMe()");
+          setAuth(me, stored.token);
+        } else {
+          console.log("⚠️ Auth: No session found");
+        }
+      } catch (err) {
+        console.error("Auth bootstrap error:", err);
+      } finally {
+        if (!cancelled) {
+          setIsChecking(false);
+          setIsHydrated(true);
+        }
       }
-    }
-  };
+    };
 
-  fetchUser();
+    bootstrap();
 
-  const params = new URLSearchParams(window.location.search);
-  if (params.get("googleLogin") === "success") {
-    fetchUser();
-  }
+    return () => { cancelled = true; };
+  }, []); // 👈 Array vacío: solo se ejecuta UNA VEZ
 
-  return () => { cancelled = true; };
-}, [setAuth, state.token]);
-
-
-
-// useEffect(() => {
-//     if (!isHydrated) return;
-
-//     let cancelled = false;
-
-//     const bootstrap = async () => {
-//       setIsChecking(true);
-//       try {
-//         let user: AuthUser | null = null;
-
-//         if (state.token) {
-//           // flujo login normal con token
-//           user = await getUserFromToken(state.token);
-//         }
-
-//         if (!user) {
-//           // si no hay token válido, intenta cookie Passport
-//           user = await getMe();
-//         }
-
-//         if (!cancelled) {
-//           setAuth(user, state.token); // si no hay user, será null
-//         }
-//       } catch (err) {
-//         console.error("Auth bootstrap error:", err);
-//         if (!cancelled) setAuth(null, null);
-//       } finally {
-//         if (!cancelled) setIsChecking(false);
-//         setIsHydrated(true); // hidrata al final
-//       }
-//     };
-
-//     bootstrap();
-
-//     return () => {
-//       cancelled = true;
-//     };
-//   }, [isHydrated, state.token, setAuth]);
-
-const login = useCallback(
-  async (values: LoginFormValues): Promise<AuthUser | null> => {
-    const res = await LoginUser(values);
-    if (!res) return null;
-    setAuth(res.user ?? null, res.token ?? null);
-    return res.user ?? null;
-  },
-  [setAuth]
-);
+  const login = useCallback(
+    async (values: LoginFormValues): Promise<AuthUser | null> => {
+      const res = await LoginUser(values);
+      if (!res) return null;
+      // Guarda en state Y localStorage
+      setAuth(res.user ?? null, res.token ?? null);
+      console.log("✅ Auth: Login successful, user saved");
+      return res.user ?? null;
+    },
+    [setAuth]
+  );
 
   const register = useCallback(
     async (values: RegisterFormValues) => {
       const res = await RegisterUser(values);
       if (!res) return false;
       setAuth(res.user ?? null, res.token ?? null);
+      console.log("✅ Auth: Register successful, user saved");
       return Boolean(res.user || res.token);
     },
     [setAuth]
   );
 
   const logout = useCallback(async () => {
-    // 1️⃣ Limpiar estado local siempre
+    // Limpiar estado local primero
     setAuth(null, null);
-     localStorage.removeItem("auth:user");
+    localStorage.removeItem("auth:user");
     localStorage.removeItem("auth:token");
+
     try {
-      // 2️⃣ Logout normal de JWT
       await fetch(`${API_BASE}/auth/logout`, {
         method: "POST",
         credentials: "include",
       });
-  
-      // 3️⃣ Logout de Google dentro de la app
-      const googleSuccess = await logoutGoogle();
-      if (!googleSuccess) {
-        console.warn("No se pudo cerrar sesión de Google en la app");
-      }
+      await logoutGoogle();
     } catch (err) {
       console.warn("Logout error:", err);
     }
@@ -220,22 +171,24 @@ const login = useCallback(
   const authFetch = useCallback(
     async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
       const headers = new Headers(init?.headers ?? {});
-      if (state.token && !headers.has("Authorization")) {
-        headers.set("Authorization", `Bearer ${state.token}`);
+      // Leer token de localStorage directamente para tener siempre el último
+      const token = typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null;
+      if (token && !headers.has("Authorization")) {
+        headers.set("Authorization", `Bearer ${token}`);
       }
       return fetch(input, {
         ...init,
         headers,
-        credentials: "include", // 🔑 incluye cookie siempre
+        credentials: "include",
       });
     },
-    [state.token]
+    []
   );
 
   const value: AuthContextValue = useMemo(
     () => ({
       ...state,
-      isAuthenticated: Boolean(state.user), // ✅ más seguro: requiere user
+      isAuthenticated: Boolean(state.user),
       isAdmin: state.user?.role === "admin",
       isHydrated,
       isChecking,
